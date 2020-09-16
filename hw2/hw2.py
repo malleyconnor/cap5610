@@ -553,19 +553,22 @@ therefore pclass will be included in the features for this model' % corr[0][1])
     feature_splits, label_splits = get_k_datasets(trainData, trainLabels, k=k)
     models = [tree.DecisionTreeClassifier(criterion='gini', splitter='best') for i in range(len(feature_splits))]
     for i in range(len(models)):
-        models[i].fit(feature_splits[i], label_splits[i])
+        featureInds = np.arange(k)
+        featureInds = np.delete(featureInds, np.where(featureInds == i))
+        train_features = feature_splits[featureInds[0]]
+        train_labels   = label_splits[featureInds[0]]
+        for ind in featureInds[1:]:
+            train_features = np.concatenate([train_features, feature_splits[ind]], axis=0) 
+            train_labels   = np.concatenate([train_labels, label_splits[ind]], axis=0)
+
+
+        models[i].fit(train_features, train_labels)
 
     # Getting prediction accuracy    
     accuracy = np.zeros(k) 
     for i in range(len(models)):
-        featureInds = np.arange(k)
-        featureInds = np.delete(featureInds, np.where(featureInds == i))
-
-        test_features = feature_splits[featureInds[0]]
-        test_labels   = label_splits[featureInds[0]]
-        for ind in featureInds[1:]:
-            test_features = np.concatenate([test_features, feature_splits[ind]], axis=0) 
-            test_labels   = np.concatenate([test_labels, label_splits[ind]], axis=0)
+        test_features = feature_splits[i] 
+        test_labels   = label_splits[i]
 
         # Predicting on one of datasets not trained on
         predictions = models[i].predict(test_features)
@@ -578,7 +581,8 @@ therefore pclass will be included in the features for this model' % corr[0][1])
     m = 5
     trainData = np.hstack((nominalTrain, ordinalTrain, continuousTrain))
     testData = np.hstack((nominalTest, ordinalTest, continuousTest))
-    random_forest = ensemble.RandomForestClassifier(n_estimators=200, min_samples_split=10, oob_score=True)
+    random_forest = ensemble.RandomForestClassifier(n_estimators=200, min_samples_split=10, 
+    oob_score=True, random_state=1)
 
     # Splitting data into training and testing sets
     percentTrain = 0.8
