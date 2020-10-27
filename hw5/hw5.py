@@ -100,9 +100,10 @@ def move_centroids(X, clustering, centroids):
     return new_centroids
             
 # Finds the K-Means clustering of the input dataset
-def kmeans_clustering(X, k, centroids, distance=manhattan_distance, iterations=None, terminator='clustering'):
+def kmeans_clustering(X, k, centroids, distance=manhattan_distance, iterations=None, 
+terminator='centroid', print_iters=False):
     new_centroids = np.copy(centroids)
-    clustering = np.zeros(len(X))
+    old_clustering = np.zeros(len(X))
 
     if iterations == None:
         iterations = sys.maxsize
@@ -113,41 +114,44 @@ def kmeans_clustering(X, k, centroids, distance=manhattan_distance, iterations=N
     for i in range(iterations):
         old_centroids = np.copy(new_centroids)
         old_clustering = get_clustering(X, old_centroids, distance=distance)
-        new_centroids = move_centroids(X, clustering, new_centroids)
-        clustering = get_clustering(X, new_centroids, distance=distance)
+        new_centroids = move_centroids(X, old_clustering, old_centroids)
+        new_clustering = get_clustering(X, new_centroids, distance=distance)
 
         old_sse = sse(X, old_clustering, old_centroids, distance=distance) 
-        new_sse = sse(X, clustering, new_centroids, distance=distance) 
+        new_sse = sse(X, new_clustering, new_centroids, distance=distance) 
         iters += 1
         if terminator == 'clustering':
-            if np.array_equal(clustering, old_clustering):
-                print('Iterations: %d' % iters)
-                return get_clustering(X, new_centroids, distance=distance), new_centroids
+            if np.array_equal(new_clustering, old_clustering):
+                if (print_iters):
+                    print('Iterations: %d' % iters)
+                return old_clustering, new_centroids
         elif terminator == 'centroid':
             if np.array_equal(new_centroids, old_centroids):
-                print('Iterations: %d' % iters)
-                return get_clustering(X, new_centroids, distance=distance), new_centroids
+                if (print_iters):
+                    print('Iterations: %d' % iters)
+                return old_clustering, new_centroids
         elif terminator == 'sse':
             if new_sse >= old_sse:
-                print('Iterations: %d' % iters)
-                return get_clustering(X, new_centroids, distance=distance), new_centroids
+                if (print_iters):
+                    print('Iterations: %d' % iters)
+                return old_clustering, new_centroids
 
 
+    if (print_iters):
+        print('Iterations: %d' % iters)
 
-            
+    return new_clustering, new_centroids
 
-
-    print('Iterations: %d' % iters)
-    return clustering, new_centroids
 
 if __name__ == '__main__':
-    task1 = False
-    task2 = False
-    task4 = False
+    task1 = True
+    task2 = True
+    task4 = True
 
     if task1:
 
         # Question 1
+        print('Question 1\n==============')
         football_data = pd.DataFrame(index=np.arange(0, 10))
         wins_2016 = [3, 3, 2, 2, 6, 6, 7, 7, 8, 7]
         wins_2017 = [5, 4, 8, 3, 2, 4, 3, 4, 5, 6]
@@ -169,7 +173,7 @@ if __name__ == '__main__':
             colors = ['blue', 'red']
 
             if len(clustering) > 0:
-                clusters = set(clustering)
+                clusters = list(set(clustering))
                 for i in range(len(clusters)):
                     plt.scatter(X.iloc[clustering == i].values[:,0], X.iloc[clustering == i].values[:,1],
                     color=colors[i], label='Cluster %d' % (i))
@@ -192,6 +196,7 @@ if __name__ == '__main__':
         centroids = np.array([[4, 6], [5, 4]])
         create_football_kmeans_plot(football_data, [], centroids, 'trial_1_0.png', 'K-Means Initialization') # Init
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=manhattan_distance, iterations=1) # Iter 1
+        print('trial 1 first iter centroids:\n%s' % (str(centroids)))
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_1_1.png', 'K-Means Clustering 1st iteration')
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=manhattan_distance, iterations=None, terminator='centroid') # Final Iter
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_1_final.png', 'K-Means Clustering Final')
@@ -200,6 +205,7 @@ if __name__ == '__main__':
         centroids = np.array([[4, 6], [5, 4]])
         create_football_kmeans_plot(football_data, [], centroids, 'trial_2_0.png', 'K-Means Initialization') # Init
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=euclidean_distance, iterations=1) # Iter 1
+        print('trial 2 first iter centroids:\n%s' % (str(centroids)))
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_2_1.png', 'K-Means Clustering 1st iteration')
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=euclidean_distance, iterations=None, terminator='centroid') # Final Iter
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_2_final.png', 'K-Means Clustering Final')
@@ -208,6 +214,7 @@ if __name__ == '__main__':
         centroids = np.array([[3, 3], [8, 3]])
         create_football_kmeans_plot(football_data, [], centroids, 'trial_3_0.png', 'K-Means Initialization') # Init
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=manhattan_distance, iterations=1) # Iter 1
+        print('trial 3 first iter centroids:\n%s' % (str(centroids)))
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_3_1.png', 'K-Means Clustering 1st iteration')
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=manhattan_distance, iterations=None, terminator='centroid') # Final Iter
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_3_final.png', 'K-Means Clustering Final')
@@ -216,6 +223,7 @@ if __name__ == '__main__':
         centroids = np.array([[3, 2], [4, 8]])
         create_football_kmeans_plot(football_data, [], centroids, 'trial_4_0.png', 'K-Means Initialization') # Init
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=manhattan_distance, iterations=1) # Iter 1
+        print('trial 4 first iter centroids:\n%s' % (str(centroids)))
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_4_1.png', 'K-Means Clustering 1st iteration')
         clustering, centroids = kmeans_clustering(football_data, 2, centroids, distance=manhattan_distance, iterations=None) # Final Iter
         create_football_kmeans_plot(football_data, clustering, centroids, 'trial_4_final.png', 'K-Means Clustering Final')
@@ -223,15 +231,15 @@ if __name__ == '__main__':
 
     # Task 2
     if task2:
+        print('Question 2\n=============')
         # Load Dataset
         iris = datasets.load_iris(as_frame=True)
         X = iris.data  # we only take the first two features.
         Y = iris.target
         names = iris.target_names
-        print(names)
 
         # For initialization
-        random.seed()
+        random.seed(1)
 
         # Normalize features
         mmScaler = preprocessing.MinMaxScaler()
@@ -245,14 +253,17 @@ if __name__ == '__main__':
             for j in range(len(centroids[0,:])):
                 centroids[i, j] = random.uniform(0, 1)
 
-        print('Task 2 initial centroids:\n%s' % (str(centroids)))
-        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance)
-        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance)
-        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance)
+        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, print_iters=True)
+        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, print_iters=True)
+        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, print_iters=True)
+        
+        # Using euclidean distance to compare the performance of the 3
+        # (Initially I used the respective distances, but that just wouldn't make sense
+        # as the cosine distance would not be proportional to the other 2)
         euc_sse = sse(X, euc_clustering, euc_centroids, euclidean_distance)
-        cos_sse = sse(X, cos_clustering, cos_centroids, cosine_distance)
-        jar_sse = sse(X, jar_clustering, jar_centroids, jaccard_distance)
-        print('Euclidean SSE: %f\nCosine SSE: %f\nJaccard SSE: %f' % (euc_sse, cos_sse, jar_sse))
+        cos_sse = sse(X, cos_clustering, cos_centroids, euclidean_distance)
+        jar_sse = sse(X, jar_clustering, jar_centroids, euclidean_distance)
+        print('Euclidean SSE: %f\nCosine SSE: %f\nJaccard SSE: %f\n' % (euc_sse, cos_sse, jar_sse))
 
         # Q2
         def get_clustering_accuracy(clustering, cluster_values, Y, name):
@@ -277,45 +288,40 @@ if __name__ == '__main__':
         get_clustering_accuracy(euc_clustering, cluster_values, Y, 'Euclidean')
         get_clustering_accuracy(cos_clustering, cluster_values, Y, 'Cosine')
         get_clustering_accuracy(jar_clustering, cluster_values, Y, 'Jaccard')
-
+        print('')
 
         # Q4
         #a
-        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, terminator='centroid')
-        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, terminator='centroid')
-        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, terminator='centroid')
+        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, terminator='centroid', print_iters=True)
+        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, terminator='centroid', print_iters=True)
+        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, terminator='centroid', print_iters=True)
         euc_sse = sse(X, euc_clustering, euc_centroids, euclidean_distance)
-        cos_sse = sse(X, cos_clustering, cos_centroids, cosine_distance)
-        jar_sse = sse(X, jar_clustering, jar_centroids, jaccard_distance)
+        cos_sse = sse(X, cos_clustering, cos_centroids, euclidean_distance)
+        jar_sse = sse(X, jar_clustering, jar_centroids, euclidean_distance)
         print('Termination on no centroid change\n===============\nEuclidean SSE: %f\nCosine SSE: %f\nJaccard SSE: %f\n' % (euc_sse, cos_sse, jar_sse))
          
         #b
-        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, terminator='sse')
-        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, terminator='sse')
-        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, terminator='sse')
+        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, terminator='sse', print_iters=True)
+        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, terminator='sse', print_iters=True)
+        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, terminator='sse', print_iters=True)
         euc_sse = sse(X, euc_clustering, euc_centroids, euclidean_distance)
-        cos_sse = sse(X, cos_clustering, cos_centroids, cosine_distance)
-        jar_sse = sse(X, jar_clustering, jar_centroids, jaccard_distance)
+        cos_sse = sse(X, cos_clustering, cos_centroids, euclidean_distance)
+        jar_sse = sse(X, jar_clustering, jar_centroids, euclidean_distance)
         print('Termination on SSE increase\n===============\nEuclidean SSE: %f\nCosine SSE: %f\nJaccard SSE: %f\n' % (euc_sse, cos_sse, jar_sse))
 
         #c
-        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, iterations=100, terminator='iterations')
-        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, iterations=100, terminator='iterations')
-        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, iterations=100, terminator='iterations')
+        euc_clustering, euc_centroids = kmeans_clustering(X, 3, centroids, euclidean_distance, iterations=100, terminator='iterations', print_iters=True)
+        cos_clustering, cos_centroids = kmeans_clustering(X, 3, centroids, cosine_distance, iterations=100, terminator='iterations', print_iters=True)
+        jar_clustering, jar_centroids = kmeans_clustering(X, 3, centroids, jaccard_distance, iterations=100, terminator='iterations', print_iters=True)
         euc_sse = sse(X, euc_clustering, euc_centroids, euclidean_distance)
-        cos_sse = sse(X, cos_clustering, cos_centroids, cosine_distance)
-        jar_sse = sse(X, jar_clustering, jar_centroids, jaccard_distance)
+        cos_sse = sse(X, cos_clustering, cos_centroids, euclidean_distance)
+        jar_sse = sse(X, jar_clustering, jar_centroids, euclidean_distance)
         print('Termination on 100 iterations\n===============\nEuclidean SSE: %f\nCosine SSE: %f\nJaccard SSE: %f\n' % (euc_sse, cos_sse, jar_sse))
-
-
-
-
-             
-
 
 
     if (task4):
         # Task 4
+        print('Question 4\n=============')
         class0 = [[4.7, 3.2], [4.9, 3.1], [5.0, 3.0], [4.6, 2.9]]
         class1 = [[5.9, 3.2], [6.7, 3.1], [6.0, 3.0], [6.2, 2.8]]
         max_distance = 0
@@ -328,7 +334,7 @@ if __name__ == '__main__':
                     points[1] = point1
 
         print('Points with max distance\n%s' % (str(points)))
-        print('Max distance: %.4f' % (max_distance))
+        print('Max distance: %.4f\n' % (max_distance))
 
         min_distance = 999999
         points= [[0, 0], [0, 0]]
@@ -339,8 +345,8 @@ if __name__ == '__main__':
                     points[0] = point0
                     points[1] = point1
 
-        print('Points with min distance\n%s' % (str(points)))
-        print('Min distance: %.4f' % (min_distance))
+        print('\nPoints with min distance\n%s' % (str(points)))
+        print('Min distance: %.4f\n' % (min_distance))
         
         avg_distance = 0 
         points= [[0, 0], [0, 0]] 
@@ -349,7 +355,7 @@ if __name__ == '__main__':
                 avg_distance += euclidean_distance(point0, point1)
 
         avg_distance /= len(class0)**2
-        print('%.4f' % ((max_distance+min_distance)/2))
+        print('\n(Max + Min) / 2: %.4f' % ((max_distance+min_distance)/2))
         print('Average distance between pairs: %.4f' % (avg_distance))
 
         # Avg intra cluster distances
